@@ -90,7 +90,6 @@ class UpdateAbleResponse {
             sb.append(extraHeaderPairs[i++]).append(extraHeaderPairs[i]).append(extraHeaderPairs[i++].length() > 0 ? eol : "");
         }        
         String ss = sb.append(eol).toString();
-        System.err.println(ss);
         this.dateOffset = endIndexOf(ss, "Date: ");
         this.expiresOffset = endIndexOf(ss, "Expires: ");
         this.ccMaxeAgeOffset = endIndexOf(ss, "max-age=");
@@ -103,9 +102,9 @@ class UpdateAbleResponse {
             bt.put(payload,0,payloadLength);
         }
         bt.flip();
-        this.data = bt; //new DirectBufferWraper(bt);
+        this.data = bt;
         this.dataAdr = ((DirectBuffer) bt).address();
-    }
+    }        
     
     int getRamUsage(){
         return data.capacity()+ 7*2+4+8+4+16+96;       

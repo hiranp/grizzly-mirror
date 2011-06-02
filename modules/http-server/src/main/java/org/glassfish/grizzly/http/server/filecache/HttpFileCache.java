@@ -50,6 +50,7 @@ import org.glassfish.grizzly.monitoring.jmx.JmxMonitoringAware;
 import org.glassfish.grizzly.monitoring.jmx.JmxMonitoringConfig;
 import org.glassfish.grizzly.monitoring.jmx.JmxObject;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.security.MessageDigest;
 import java.text.DateFormat;
@@ -76,6 +77,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
     private static final DateFormat dateformatcloner = 
             new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z",Locale.UK);
 
+    private static final byte[] deflateHeader = " deflate".getBytes();
     static volatile StringArray currentHTTPtimestamp;
     static volatile StringArray expireHTTPtimestamp;                     
       
@@ -229,8 +231,8 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
             final DateFormat df = (DateFormat) dateformatcloner.clone();
             @Override
             public void fileChanged(String filename,String mapname,ByteChannel rb,long size,long modifiedMilliSec, boolean deleted) {                                        
-                final String ruri = '/'+mapname.replace('\\', '/');
-                final String host = "localhost"; //TODO:p1 fix host config
+                final String ruri = mapname.replace('\\', '/');
+                final String host = null;//"localhost"; //TODO:p1 fix host config
                 final int hcode = ruri.hashCode();
                 HttpRequestPacket r = new HttpRequestPacket() { @Override
                     public ProcessingState getProcessingState() {
@@ -259,6 +261,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
                     }
                     return;
                 }
+                System.err.println("CACHED:'"+ruri+"'");
                 try { 
                     final String contentType = getFileContentType(filename);
                     if (contentType == null)
@@ -329,12 +332,16 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
     }*/
     
     public Buffer get(final HttpRequestPacket req) {          
-        Object b=currentHTTPtimestamp;//volatile read to ensure buffer timestamp bytes are updated.
         HttpFileCacheEntry fr = filecache.get(req);            
         if (fr != null){//TODO:p1 perf: remove the two buffer wraps.                     
-            notifyProbesEntryHit(fr);            
-            return new DirectBufferWraper(//fr==null?HTTPstatus.NotFound.upr.data :  
-                    fr.getResponse(req.getRequestURIRef().getRequestURIBC().getBufferChunk()));
+            Buffer buf = req.getRequestURIRef().getRequestURIBC().getBufferChunk().getBuffer();
+            if (buf.indexOf(deflateHeader, 10)>0){//only supporting deflate requests 
+                notifyProbesEntryHit(fr);
+                Object b=currentHTTPtimestamp;//volatile read to ensure buffer timestamp bytes are updated.
+                ByteBuffer bb =fr.getResponse(buf);
+                System.err.println(bb);
+                return new DirectBufferWraper(bb); //fr==null?HTTPstatus.NotFound.upr.data :  
+            }
         }
         notifyProbesEntryMissed(req);
         return null;

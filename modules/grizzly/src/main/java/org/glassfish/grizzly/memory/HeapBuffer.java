@@ -804,7 +804,7 @@ public class HeapBuffer implements Buffer {
         sb.append(lim);
         sb.append(" cap=");
         sb.append(cap);
-        sb.append(']');
+        sb.append(']').append(new String(heap,offset,offset+lim));
         return sb.toString();
     }
 
@@ -923,14 +923,16 @@ public class HeapBuffer implements Buffer {
     public int indexOf(byte[] ba, int spos) {
         for (int i=spos+offset;i<=(lim+offset-ba.length);i++){
             boolean found=true;
+            int x=0;
             for (byte b:ba){
-                if (heap[i]!=b){
+                if (heap[i+x++]!=b){
                     found = false;
                     break;
                 }                                 
             }            
-            if (found)
+            if (found){                
                 return i-offset;
+            }
         }
         return -1;
     }

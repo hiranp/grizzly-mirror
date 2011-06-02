@@ -43,8 +43,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
+import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.http.util.Base64Utils;
-import org.glassfish.grizzly.http.util.BufferChunk;
 
 /**
  *
@@ -72,7 +72,7 @@ public final class HttpFileCacheEntry {
         hc.fileLoader.loadFile(hc.MD5_, bs, data, bout, compress);
         int dataLength=data.length;
         String etagString = Base64Utils.encodeToString(hc.MD5_.digest(), false);
-        etagHeaderValue = ("If-None-Match: " + etagString).getBytes();
+        etagHeaderValue = ("atch: "+etagString).getBytes();//"If-None-Match
         if (compress = compress && bout.count < disksize) {
             data = bout.buf;
             dataLength = bout.count;
@@ -107,8 +107,8 @@ public final class HttpFileCacheEntry {
         UpdateAbleResponse.put(curtime, responseNotModified.dateOffset, responseNotModified.dataAdr);
     }
     
-    ByteBuffer getResponse(final BufferChunk mb) {
-        return (mb.getBuffer().indexOf(etagHeaderValue, 0) >= 0) ? responseNotModified.data : response.data;
+    ByteBuffer getResponse(final Buffer buf) {
+        return (buf.indexOf(etagHeaderValue, 10) >= 0) ? responseNotModified.data : response.data;
     }
 
     @Override
