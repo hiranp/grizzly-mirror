@@ -919,6 +919,22 @@ public class HeapBuffer implements Buffer {
                 capacity);
     }
 
+    @Override
+    public int indexOf(byte[] ba, int spos) {
+        for (int i=spos+offset;i<=(lim+offset-ba.length);i++){
+            boolean found=true;
+            for (byte b:ba){
+                if (heap[i]!=b){
+                    found = false;
+                    break;
+                }                                 
+            }            
+            if (found)
+                return i-offset;
+        }
+        return -1;
+    }
+
     private static class DebugLogic {
         static void doDebug(HeapBuffer heapBuffer) {
             heapBuffer.clear();

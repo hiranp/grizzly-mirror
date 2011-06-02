@@ -40,7 +40,6 @@
 
 package org.glassfish.grizzly.http.server.filecache.jmx;
 
-import org.glassfish.grizzly.http.server.filecache.FileCacheEntry;
 import org.glassfish.grizzly.http.server.filecache.FileCacheProbe;
 import org.glassfish.grizzly.monitoring.jmx.GrizzlyJmxManager;
 import org.glassfish.grizzly.monitoring.jmx.JmxObject;
@@ -48,9 +47,10 @@ import org.glassfish.gmbal.Description;
 import org.glassfish.gmbal.GmbalMBean;
 import org.glassfish.gmbal.ManagedAttribute;
 import org.glassfish.gmbal.ManagedObject;
-
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.glassfish.grizzly.http.HttpRequestPacket;
+import org.glassfish.grizzly.http.server.filecache.HttpFileCacheEntry;
 
 /**
  * This class provides a JMX view of the current operating state of the
@@ -65,7 +65,7 @@ public class FileCache extends JmxObject {
     /**
      * The {@link org.glassfish.grizzly.http.server.filecache.FileCache} being managed.
      */
-    private final org.glassfish.grizzly.http.server.filecache.FileCache fileCache;
+    private final org.glassfish.grizzly.http.server.filecache.HttpFileCache fileCache;
 
     /**
      * The current {@link org.glassfish.grizzly.http.server.filecache.FileCache} entry count.
@@ -86,7 +86,9 @@ public class FileCache extends JmxObject {
      * The number of cache errors.
      */
     private final AtomicInteger cacheErrorCount = new AtomicInteger();
-
+    
+    private final AtomicInteger cacheEntryUpdatedCount = new AtomicInteger();
+    
     /**
      * The {@link FileCacheProbe} used to track cache statistics.
      */
@@ -104,7 +106,7 @@ public class FileCache extends JmxObject {
      * @param fileCache the {@link org.glassfish.grizzly.http.server.filecache.FileCache}
      *  to manage.
      */
-    public FileCache(org.glassfish.grizzly.http.server.filecache.FileCache fileCache) {
+    public FileCache(org.glassfish.grizzly.http.server.filecache.HttpFileCache fileCache) {
         this.fileCache = fileCache;
     }
 
@@ -165,59 +167,13 @@ public class FileCache extends JmxObject {
     }
 
     /**
-     * @see org.glassfish.grizzly.http.server.filecache.FileCache#getSecondsMaxAge()
-     */
-    @ManagedAttribute(id="max-age-seconds")
-    @Description("The maximum age, in seconds, a resource may be cached.")
-    public int getSecondsMaxAge() {
-        return fileCache.getSecondsMaxAge();
-    }
-
-    /**
-     * @see org.glassfish.grizzly.http.server.filecache.FileCache#getMaxCacheEntries()
-     */
-    @ManagedAttribute(id="max-number-of-cache-entries")
-    @Description("The maxumim number of entries that may exist in the cache.")
-    public int getMaxCacheEntries() {
-        return fileCache.getMaxCacheEntries();
-    }
-
-    /**
-     * @see org.glassfish.grizzly.http.server.filecache.FileCache#getMinEntrySize()
-     */
-    @ManagedAttribute(id="min-entry-size")
-    @Description("The maximum size, in bytes, a file must be in order to be cached in the heap cache.")
-    public long getMinEntrySize() {
-        return fileCache.getMinEntrySize();
-    }
-
-    /**
      * @see org.glassfish.grizzly.http.server.filecache.FileCache#getMaxEntrySize()
      */
     @ManagedAttribute(id="max-entry-size")
     @Description("The maximum size, in bytes, a resource may be before it can no longer be considered cachable.")
     public long getMaxEntrySize() {
-        return fileCache.getMaxEntrySize();
+        return fileCache.getMaxEntrySizeBytes();
     }
-
-    /**
-     * @see org.glassfish.grizzly.http.server.filecache.FileCache#getMaxLargeFileCacheSize()
-     */
-    @ManagedAttribute(id="memory-mapped-file-cache-size")
-    @Description("The maximum size, in bytes, of the memory mapped cache for large files.")
-    public long getMaxLargeFileCacheSize() {
-        return fileCache.getMaxLargeFileCacheSize();
-    }
-
-    /**
-     * @see org.glassfish.grizzly.http.server.filecache.FileCache#getMaxSmallFileCacheSize()
-     */
-    @ManagedAttribute(id="heap-file-cache-size")
-    @Description("The maximum size, in bytes, of the heap cache for files below the water mark set by min-entry-size.")
-    public long getMaxSmallFileCacheSize() {
-        return fileCache.getMaxSmallFileCacheSize();
-    }
-
 
     /**
      * @return the total number of cached entries.
@@ -261,19 +217,19 @@ public class FileCache extends JmxObject {
     @ManagedAttribute(id="heap-cache-size-in-bytes")
     @Description("The current size, in bytes, of the heap memory cache.")
     public long getHeapMemoryInBytes() {
-        return fileCache.getHeapCacheSize();        
+        return fileCache.getUsedRamSizeBytes();
     }
 
     /**
-     * @return the total size, in bytes, of the mapped memory cache.
+     * 
+     * @return the total number of file reloads.
      */
-    @ManagedAttribute(id="mapped-memory-cache-size-in-bytes")
-    @Description("The current size, in bytes, of the mapped memory cache.")
-    public long getMappedMemorytInBytes() {
-        return fileCache.getMappedCacheSize();
-    }
-
-
+    @ManagedAttribute(id="cache-update-count")
+    @Description("The total number of file reloads.")
+    public long getcacheEntryUpdatedCount() {
+        return cacheEntryUpdatedCount.get();
+    }    
+    
     // ---------------------------------------------------------- Nested Classes
 
 
@@ -287,28 +243,33 @@ public class FileCache extends JmxObject {
 
 
         @Override
-        public void onEntryAddedEvent(org.glassfish.grizzly.http.server.filecache.FileCache fileCache, FileCacheEntry entry) {
+        public void onEntryAddedEvent(HttpFileCacheEntry entry) {
             cachedEntryCount.incrementAndGet();
         }
 
         @Override
-        public void onEntryRemovedEvent(org.glassfish.grizzly.http.server.filecache.FileCache fileCache, FileCacheEntry entry) {
+        public void onEntryRemovedEvent(HttpFileCacheEntry entry) {
             cachedEntryCount.decrementAndGet();
         }
 
         @Override
-        public void onEntryHitEvent(org.glassfish.grizzly.http.server.filecache.FileCache fileCache, FileCacheEntry entry) {
+        public void onEntryHitEvent(HttpFileCacheEntry entry) {
             cacheHitCount.incrementAndGet();
         }
 
         @Override
-        public void onEntryMissedEvent(org.glassfish.grizzly.http.server.filecache.FileCache fileCache, String host, String requestURI) {
+        public void onEntryMissedEvent(HttpRequestPacket req) {
             cacheMissCount.incrementAndGet();
         }
 
         @Override
-        public void onErrorEvent(org.glassfish.grizzly.http.server.filecache.FileCache fileCache, Throwable error) {
+        public void onErrorEvent(org.glassfish.grizzly.http.server.filecache.HttpFileCache fileCache, Throwable error) {
             cacheErrorCount.incrementAndGet();
+        }
+
+        @Override
+        public void onEntryUpdatedEvent(HttpFileCacheEntry entry) {
+            cacheEntryUpdatedCount.incrementAndGet();
         }
 
     } // END JMXFileCacheProbe

@@ -43,7 +43,6 @@ package org.glassfish.grizzly.http.server.jmx;
 import org.glassfish.grizzly.Transport;
 import org.glassfish.grizzly.http.HttpCodecFilter;
 import org.glassfish.grizzly.http.KeepAlive;
-import org.glassfish.grizzly.http.server.filecache.FileCache;
 import org.glassfish.grizzly.http.server.HttpServerFilter;
 import org.glassfish.grizzly.monitoring.jmx.GrizzlyJmxManager;
 import org.glassfish.grizzly.monitoring.jmx.JmxObject;
@@ -51,6 +50,7 @@ import org.glassfish.gmbal.Description;
 import org.glassfish.gmbal.GmbalMBean;
 import org.glassfish.gmbal.ManagedAttribute;
 import org.glassfish.gmbal.ManagedObject;
+import org.glassfish.grizzly.http.server.filecache.HttpFileCache;
 
 /**
  * JMX management object for {@link org.glassfish.grizzly.http.server.NetworkListener}.
@@ -63,7 +63,7 @@ public class NetworkListener extends JmxObject {
 
     private final org.glassfish.grizzly.http.server.NetworkListener listener;
 
-    private FileCache currentFileCache;
+    private HttpFileCache currentFileCache;
     private Transport currentTransport;
     private KeepAlive currentKeepAlive;
 
@@ -227,7 +227,7 @@ public class NetworkListener extends JmxObject {
 
     protected void rebuildSubTree() {
 
-        final FileCache fileCache = listener.getFileCache();
+        final HttpFileCache fileCache = listener.getFileCache();
         if (currentFileCache != fileCache) {
             if (currentFileCache != null) {
                 mom.deregister(fileCacheJmx);

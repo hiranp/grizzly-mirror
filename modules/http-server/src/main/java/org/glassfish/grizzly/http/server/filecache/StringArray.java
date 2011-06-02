@@ -1,7 +1,7 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010-2011 Oracle and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -37,42 +37,64 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-
 package org.glassfish.grizzly.http.server.filecache;
-
-import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
- * The entry value in the file cache map.
  *
- * @author Alexey Stashok
+ * @author gustav trede
  */
-public final class FileCacheEntry implements Runnable {
+final class StringArray {
+    /**  Can be null.*/
+    public String s;
+    public final int hashcode;
+    public final byte[] ba;
 
-    public FileCacheKey key;
-    public String host;
-    public String requestURI;
-    public String lastModified = "";
-    public String contentType;
-    public ByteBuffer bb;
-    public String xPoweredBy;
-    public FileCache.CacheType type;
-    public String date;
-    public String Etag;
-    public long contentLength = -1;
-    public long fileSize = -1;
-    public String keepAlive;
-    
-    public volatile long timeoutMillis;
+    /**
+     * @param s
+     */
+    public StringArray(String s) {
+        //TODO:p3 add @NotNull
+        this.s = s; //=s.toLowerCase();
+        this.ba = s.getBytes();
+        this.hashcode = Arrays.hashCode(ba);
+    }
 
-    private final FileCache fileCache;
+    /*public StringArray(String dontToLowerCase,Object dumy) {
+    this.s = dontToLowerCase;
+    this.ba = dontToLowerCase.getBytes();
+    this.hashcode = Arrays.hashCode(ba);
+    }*/
+    /**
+     * @param ba
+     */
+    public StringArray(byte[] ba) {
+        //TODO:p3 add @NotNull to ba, s can be null.
+        this.ba = ba;
+        this.hashcode = Arrays.hashCode(ba);
+    }
 
-    public FileCacheEntry(FileCache fileCache) {
-        this.fileCache = fileCache;
+    public boolean equalsArray(byte[] ba) {
+        return Arrays.equals(this.ba, ba);
+    }
+
+    /*public void equalsArrayEx(byte[] ba) throws InvalidResourceException{
+    if (!Arrays.equals(this.ba, ba))
+    throw new InvalidResourceException(new StringArray(ba), this);
+    }*/
+    @Override
+    public final boolean equals(Object obj) {
+        return Arrays.equals(ba, ((StringArray) obj).ba);
     }
 
     @Override
-    public void run() {
-        fileCache.remove(this);
+    public int hashCode() {
+        return hashcode;
     }
+
+    @Override
+    public String toString() {
+        return s != null ? s : (s = new String(ba));
+    }
+    
 }

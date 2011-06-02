@@ -131,6 +131,22 @@ public abstract class HttpRequestPacket extends HttpHeader {
     // ---------------------------------------------------------- Public Methods
 
 
+    /*
+     * Used by http file cache, forwarding equals to custom impl.
+     */    
+    @Override
+    public boolean equals(Object obj) {
+        return obj.equals(this);
+    }
+    
+    /*
+     * Used by http file cache.
+     */
+    @Override
+    public int hashCode() {
+        return requestURIRef.getRequestURIBC().toString().hashCode();
+    }
+        
     public void setConnection(Connection connection) {
         this.connection = connection;
     }

@@ -1172,6 +1172,11 @@ public final class BuffersBuffer extends CompositeBuffer {
     
     private final SetterImpl setter = new SetterImpl();
 
+    @Override
+    public int indexOf(byte[] ba, int spos) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
     private final class SetterImpl implements Setter {
         private Buffer buffer;
         private int position;

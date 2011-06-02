@@ -62,6 +62,8 @@ public interface Buffer extends Comparable<Buffer> {
 
     boolean isComposite();
 
+    public int indexOf(byte[] ba, int spos);
+    
     /**
      * Prepend data from header.position() to header.limit() to the
      * current buffer.  This will change the value returned by buffer()!

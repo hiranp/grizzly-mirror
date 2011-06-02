@@ -738,6 +738,11 @@ public class ByteBufferWrapper implements Buffer {
         return new ByteBufferWrapper(byteBuffer);
     }
 
+    @Override
+    public int indexOf(byte[] ba, int spos) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
     private static class DebugLogic {
         static void doDebug(ByteBufferWrapper wrapper) {
             wrapper.visible.clear();

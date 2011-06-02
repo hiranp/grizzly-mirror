@@ -37,62 +37,14 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-
 package org.glassfish.grizzly.http.server.filecache;
 
+import java.nio.channels.ByteChannel;
+
 /**
- * The entry key in the file cache map.
- * 
- * @author Alexey Stashok
+ *
+ * @author gustav trede
  */
-public class FileCacheKey {
-    protected String host;
-    protected String uri;
-
-    protected FileCacheKey() {
-    }
-    
-    public FileCacheKey(final String host, final String uri) {
-        this.host = host;
-        this.uri = uri;
-    }
-
-    protected String getHost() {
-        return host;
-    }
-
-    protected String getUri() {
-        return uri;
-    }
-    
-    @Override
-    public boolean equals(final Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }        
-        final FileCacheKey other = (FileCacheKey) obj;
-        
-        final String otherHost = other.host;
-        if ((this.host == null) ? (otherHost != null) : !this.host.equals(otherHost)) {
-            return false;
-        }
-
-        final String otherUri = other.uri;
-        if ((this.uri == null) ? (otherUri != null) : !this.uri.equals(otherUri)) {
-            return false;
-        }
-        
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 3;
-        hash = 23 * hash + (this.host != null ? this.host.hashCode() : 0);
-        hash = 23 * hash + (this.uri != null ? this.uri.hashCode() : 0);
-        return hash;
-    }
+interface FileChangedListener {
+    void fileChanged(String filename,String mapname,ByteChannel rb,long size,long modifiedMilliSec, boolean deleted);
 }

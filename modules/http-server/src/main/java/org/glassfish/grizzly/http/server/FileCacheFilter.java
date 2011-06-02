@@ -44,9 +44,8 @@ import org.glassfish.grizzly.filterchain.BaseFilter;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.http.HttpContent;
-import org.glassfish.grizzly.http.HttpPacket;
 import org.glassfish.grizzly.http.HttpRequestPacket;
-import org.glassfish.grizzly.http.server.filecache.FileCache;
+import org.glassfish.grizzly.http.server.filecache.HttpFileCache;
 
 import java.io.IOException;
 
@@ -56,9 +55,9 @@ import java.io.IOException;
  */
 public class FileCacheFilter extends BaseFilter {
 
-    private final FileCache fileCache;
+    private final HttpFileCache fileCache;
 
-    public FileCacheFilter(FileCache fileCache) {
+    public FileCacheFilter(HttpFileCache fileCache) {
 
         this.fileCache = fileCache;
 
@@ -70,22 +69,20 @@ public class FileCacheFilter extends BaseFilter {
 
     @Override
     public NextAction handleRead(FilterChainContext ctx) throws IOException {
-
         if (fileCache.isEnabled()) {
-            final HttpContent requestContent = (HttpContent) ctx.getMessage();
-            final HttpRequestPacket request = (HttpRequestPacket) requestContent.getHttpHeader();
-            final HttpPacket response = fileCache.get(request);
+            final HttpRequestPacket request = (HttpRequestPacket) 
+                    ((HttpContent) ctx.getMessage()).getHttpHeader();
+            final Object response = fileCache.get(request);
             if (response != null) {
                 ctx.write(response);
                 return ctx.getStopAction();
             }
         }
-
         return ctx.getInvokeAction();
 
     }
 
-    public FileCache getFileCache() {
+    public HttpFileCache getFileCache() {
         return fileCache;
     }
 }

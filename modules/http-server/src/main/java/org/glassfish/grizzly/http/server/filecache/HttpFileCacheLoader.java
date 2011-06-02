@@ -1,7 +1,7 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright (c) 2010 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010-2011 Oracle and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -37,58 +37,26 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
-
 package org.glassfish.grizzly.http.server.filecache;
 
-import org.glassfish.grizzly.http.HttpRequestPacket;
+import java.io.File;
+import java.io.IOException;
+import java.nio.channels.ByteChannel;
+import java.security.MessageDigest;
+import org.glassfish.grizzly.http.server.filecache.HttpFileCacheEntry.MyByteArrayOutputStream;
 
 /**
- * Monitoring probe providing callbacks that may be invoked by Grizzly {@link FileCache}.
  *
- * @author Alexey Stashok
- *
- * @since 2.0
+ * @author gustav trede
  */
-public interface FileCacheProbe {
-    /**
-     * Method will be called, when file cache entry gets added.
-     *
-     * @param fileCache {@link FileCache}, the event belongs to.
-     * @param entry {@link FileCacheEntry} been added.
-     */
-    public void onEntryAddedEvent(HttpFileCacheEntry entry);
-    public void onEntryUpdatedEvent(HttpFileCacheEntry entry);
+public interface HttpFileCacheLoader {
 
-    /**
-     * Method will be called, when file cache entry gets removed.
-     *
-     * @param fileCache {@link FileCache}, the event belongs to.
-     * @param entry {@link FileCacheEntry} been removed.
-     */
-    public void onEntryRemovedEvent(HttpFileCacheEntry entry);
-
-    /**
-     * Method will be called, when file cache entry gets hit.
-     *
-     * @param fileCache {@link FileCache}, the event belongs to.
-     * @param entry {@link FileCacheEntry} been hitted.
-     */
-    public void onEntryHitEvent(HttpFileCacheEntry entry);
-
-    /**
-     * Method will be called, when file cache entry is missed for some resource.
-     *
-     * @param fileCache {@link FileCache}, the event belongs to.
-     * @param host the requested HTTP "Host" header.
-     * @param requestURI the requested HTTP URL.
-     */
-    public void onEntryMissedEvent(HttpRequestPacket req);
-
-    /**
-     * Method will be called, when error occurs on the {@link FileCache}.
-     *
-     * @param fileCache {@link FileCache}, the event belongs to.
-     * @param error error
-     */
-    public void onErrorEvent(HttpFileCache fileCache, Throwable error);
+    void setFileChangedListener(FileChangedListener fcli);
+        
+    void loadFile(File fileOrRootDir, String customMapNameIfFile, 
+            String prefixMapingIfDir,boolean followSymlinks) 
+            throws IOException;
+    
+    void loadFile(MessageDigest MD5_,ByteChannel bs,byte[] data,MyByteArrayOutputStream bout,boolean compress) throws IOException;
+    void setEnabled(boolean setEnabled) throws IOException;
 }

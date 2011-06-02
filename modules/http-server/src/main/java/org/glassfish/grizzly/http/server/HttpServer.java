@@ -63,7 +63,7 @@ import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.filterchain.TransportFilter;
 import org.glassfish.grizzly.http.ContentEncoding;
-import org.glassfish.grizzly.http.server.filecache.FileCache;
+import org.glassfish.grizzly.http.server.filecache.HttpFileCache;
 import org.glassfish.grizzly.http.server.jmx.JmxEventListener;
 import org.glassfish.grizzly.memory.MemoryProbe;
 import org.glassfish.grizzly.monitoring.MonitoringConfig;
@@ -518,8 +518,7 @@ public class HttpServer {
                     serverConfig.getMonitoringConfig().getHttpConfig().getProbes());
             builder.add(httpServerFilter);
 
-            final FileCache fileCache = listener.getFileCache();
-            fileCache.initialize(listener.getTransport().getMemoryManager(), delayedExecutor);
+            final HttpFileCache fileCache = listener.getFileCache();
             final FileCacheFilter fileCacheFilter = new FileCacheFilter(fileCache);
             fileCache.getMonitoringConfig().addProbes(
                     serverConfig.getMonitoringConfig().getFileCacheConfig().getProbes());

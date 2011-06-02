@@ -55,7 +55,6 @@ import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.filterchain.Filter;
 import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
-import org.glassfish.grizzly.http.server.filecache.FileCache;
 import org.glassfish.grizzly.http.server.io.OutputBuffer;
 import org.glassfish.grizzly.http.server.util.MimeType;
 import org.glassfish.grizzly.http.util.HttpStatus;
@@ -326,15 +325,19 @@ public class StaticHttpHandler extends HttpHandler {
         }
     }
 
-    public final boolean addToFileCache(Request req, File resource) {
-        final FilterChainContext fcContext = req.getContext();
-        final FileCacheFilter fileCacheFilter = lookupFileCache(fcContext);
+    public final boolean addToFileCache(Request req, File resource){
+        return addToFileCache(req, resource, null, false);
+    }
+    
+    public final boolean addToFileCache(Request req, File resource,
+            String prefixMapingIfDir,boolean followSymlinks) {
+        final FileCacheFilter fileCacheFilter = lookupFileCache(req.getContext());
         if (fileCacheFilter != null) {
-            final FileCache fileCache = fileCacheFilter.getFileCache();
-            fileCache.add(req.getRequest(), resource);
+            fileCacheFilter.getFileCache().
+                    add(resource, req.getRequest().getRequestURI(),
+                    prefixMapingIfDir, followSymlinks);
             return true;
         }
-
         return false;
     }
 
