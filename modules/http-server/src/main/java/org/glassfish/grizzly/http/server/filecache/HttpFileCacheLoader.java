@@ -50,13 +50,15 @@ import org.glassfish.grizzly.http.server.filecache.HttpFileCacheEntry.MyByteArra
  * @author gustav trede
  */
 public interface HttpFileCacheLoader {
-
+       
     void setFileChangedListener(FileChangedListener fcli);
-        
+    
     void loadFile(File fileOrRootDir, String customMapNameIfFile, 
             String prefixMapingIfDir,boolean followSymlinks) 
             throws IOException;
     
-    void loadFile(MessageDigest MD5_,ByteChannel bs,byte[] data,MyByteArrayOutputStream bout,boolean compress) throws IOException;
-    void setEnabled(boolean setEnabled) throws IOException;
+    void loadFile(MessageDigest MD5_,ByteChannel bs,byte[] data,MyByteArrayOutputStream bout) throws IOException;
+    void remove(File file,String optionalmapedname, String host);
+    
+    void setEnabled(boolean setEnabled) throws IOException;    
 }

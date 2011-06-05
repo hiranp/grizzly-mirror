@@ -88,7 +88,7 @@ class UpdateAbleResponse {
         sb.append("HTTP/1.1 ").append(firstResponseLine).append(eol).append("Date: ").append(HttpFileCache.currentHTTPtimestamp).append(eol);
         for (int i = 0; i < extraHeaderPairs.length;) {
             sb.append(extraHeaderPairs[i++]).append(extraHeaderPairs[i]).append(extraHeaderPairs[i++].length() > 0 ? eol : "");
-        }        
+        }
         String ss = sb.append(eol).toString();
         this.dateOffset = endIndexOf(ss, "Date: ");
         this.expiresOffset = endIndexOf(ss, "Expires: ");

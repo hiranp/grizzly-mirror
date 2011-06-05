@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
+import java.util.Arrays;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.http.util.Base64Utils;
 
@@ -68,11 +69,12 @@ public final class HttpFileCacheEntry {
             throw new IOException("Not caching too big file:"+name+" raw size: " + disksize);
         }
         byte[] data = new byte[(int) disksize];
-        MyByteArrayOutputStream bout = compress?new MyByteArrayOutputStream((int)disksize):null;
-        hc.fileLoader.loadFile(hc.MD5_, bs, data, bout, compress);
+        MyByteArrayOutputStream bout = compress?new MyByteArrayOutputStream(5+(int)(disksize/2)):null;
+        hc.MD5_.reset();
+        hc.fileLoader.loadFile(hc.MD5_, bs, data, bout);
         int dataLength=data.length;
         String etagString = Base64Utils.encodeToString(hc.MD5_.digest(), false);
-        etagHeaderValue = ("atch: "+etagString).getBytes();//"If-None-Match
+        etagHeaderValue = ("atch: "+etagString).getBytes();//"If-None-Match        
         if (compress = compress && bout.count < disksize) {
             data = bout.buf;
             dataLength = bout.count;
@@ -90,8 +92,7 @@ public final class HttpFileCacheEntry {
                 "Etag: ", etagString, 
                 "Last-Modified: ",modTime, 
                 "Content-Type: ", contentType, 
-                compress ? 
-                "Content-Encoding: deflate\r\nAge: " : "Age: ", "0", 
+                compress ? "Content-Encoding: deflate\r\nAge: " : "Age: ", "0", 
                 usemd5 ? "Content-MD5: " : "",
                 usemd5 ? etagString : "");
         responseNotModified = new UpdateAbleResponse("304 Not Modified", "Etag: ", etagString);
@@ -118,7 +119,7 @@ public final class HttpFileCacheEntry {
     
     
     class MyByteArrayOutputStream extends OutputStream {
-        final byte buf[];
+        byte[] buf;
         int count;
 
         public MyByteArrayOutputStream(int size) {
@@ -127,11 +128,15 @@ public final class HttpFileCacheEntry {
 
         @Override
         public void write(int b) {
-            buf[count++] = (byte) b;
+            throw new IllegalStateException("Not supported.");
+            //buf[count++] = (byte) b;
         }
 
         @Override
-        public void write(byte b[], int off, int len) {   
+        public void write(byte b[], int off, int len) {
+            if (count+len>buf.length){
+                buf = Arrays.copyOf(buf, count);
+            }
             System.arraycopy(b, off, buf, count, len);
             count += len;
         }

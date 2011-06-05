@@ -53,7 +53,7 @@ import org.glassfish.grizzly.http.server.filecache.HttpFileCacheEntry.MyByteArra
  * Sucky 1.6 fileloader.
  * @author gustav trede
  */
-public class SuckyFileLoader implements HttpFileCacheLoader{
+public class SuckyFileLoader implements HttpFileCacheLoader {
 
     private FileChangedListener fcli;
     
@@ -77,13 +77,13 @@ public class SuckyFileLoader implements HttpFileCacheLoader{
     }
 
     @Override
-    public void loadFile(MessageDigest MD5_, ByteChannel bs, byte[] data, MyByteArrayOutputStream bout, boolean compress) throws IOException {
+    public void loadFile(MessageDigest MD5_, ByteChannel bs, byte[] data, MyByteArrayOutputStream bout) throws IOException {
+        final boolean compress = bout !=null;
         Deflater def = compress?new Deflater(Deflater.DEFAULT_COMPRESSION):null;
         DeflaterOutputStream zout = compress?new DeflaterOutputStream(bout, def):null;
         ByteBuffer bb_ = ByteBuffer.wrap(data);
         int r;
         int pos = 0;
-        MD5_.reset();
         while ((r = bs.read(bb_)) > 0) {
             MD5_.update(data, pos, r);
             if (compress) {
@@ -100,5 +100,10 @@ public class SuckyFileLoader implements HttpFileCacheLoader{
     
     @Override
     public void setEnabled(boolean setEnabled) throws IOException {        
+    }
+
+    @Override
+    public void remove(File f,String optionalmapedname, String host) {
+        fcli.fileChanged(optionalmapedname==null?"/"+f.getName():optionalmapedname, host,null,0,0,true);
     }
 }

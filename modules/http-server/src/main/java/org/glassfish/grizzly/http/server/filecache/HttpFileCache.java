@@ -295,6 +295,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
     /*
      * Async cache add in Java 1.7 (There will be a delay before the file is available).
      * Sync cache add  in 1.6. can only be files not directory in 1.6.
+     * TODO: add host mapping param.
      */
     public void add(File file, String customMapNameIfFile, 
             String prefixMapingIfDir,boolean followSymlinks)  {        
@@ -310,30 +311,18 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
         }
     }
     
-    public boolean remove(String mapedname){
-        return true;
+    /**
+     * Only works on mapped single files or root directories.
+     * @param file
+     * @return 
+     */
+    public void remove(File file,String optionalmapedname, String host){
+        fileLoader.remove(file,optionalmapedname,host);
     }
-
-    /*static final int doubleEndline = 13+(10<<8)+(13<<16)+(10<<24); 
-    public static MyDirectByteBuffer getCacheResponse(MyDirectByteBuffer rb, int n,int a){
-        if (rb.get(n-4)==doubleEndline){
-            final boolean isget=a==('G'+('E'<<8)+('T'<<16)+(' '<<24));
-            if (isget | a==('H'+('E'<<8)+('A'<<16)+('D'<<24)) ){
-                final int d= isget?4:5;
-                rb.position = rb.indexOf(d, n, (byte)' ');
-                Object b=currentHTTPtimestamp;//volatile read to ensure buffer timestamp bytes etc are updated.
-                FileResponse fr = filecache.get(rb);
-                return (fr==null?HTTPstatus.NotFound.upr.data : fr.getResponse(rb));
-            //const FileResponse* fr = (rb[0]=='/' && (rb[2]==' '||rb[1]==' ')) // resource is an '/' or '/' and one more char. ' ' is mapped to index.html in filecache
-              //      ? findFile(rb+1,le-d-1) : _NOTFOUND;//could separate malformed resource as 404 Bad Request, but it would cost an extra branch.                    
-            }
-        }
-        return HTTPstatus.BadRequest.upr.data;
-    }*/
     
     public Buffer get(final HttpRequestPacket req) {          
-        HttpFileCacheEntry fr = filecache.get(req);            
-        if (fr != null){//TODO:p1 perf: remove the two buffer wraps.                     
+        HttpFileCacheEntry fr = filecache.get(req);//TODO: perf: remove the two buffer wraps.            
+        if (fr != null){//TODO: if deflate header is with ;q=0 we must return null.
             Buffer buf = req.getRequestURIRef().getRequestURIBC().getBufferChunk().getBuffer();
             if (buf.indexOf(deflateHeader, 10)>0){//only supporting deflate requests 
                 notifyProbesEntryHit(fr);

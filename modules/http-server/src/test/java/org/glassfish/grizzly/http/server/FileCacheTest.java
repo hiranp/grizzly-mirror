@@ -202,14 +202,14 @@ public class FileCacheTest {
 
             assertEquals("Not cached data mismatch\n" + cacheProbe, "Hello not cached data", response1.getContent().toStringContent());
 
-            final File file = new File(fileName);
+            /*final File file = new File(fileName);
             InputStream fis = new FileInputStream(file);
             byte[] data = new byte[(int) file.length()];
             fis.read(data);
             fis.close();
 
-            final String pattern = new String(data);
-
+            final String pattern = new String(data);*/
+            Thread.sleep(500);
             final Future<HttpContent> responseFuture2 = send("localhost", PORT, request2);
             final HttpContent response2 = responseFuture2.get(3, TimeUnit.SECONDS);
             assertEquals("ContentType is wrong " + response2.getHttpHeader().getContentType(), "text/xml", response2.getHttpHeader().getContentType());
@@ -336,7 +336,7 @@ public class FileCacheTest {
                 .header("Accept-Encoding", "deflate")
                 .header("If-None-Match", etagString)
                 .build();
-
+Thread.sleep(500);
         final Future<HttpContent> responseFuture2 = send("localhost", PORT, request2);
         final HttpContent response2 = responseFuture2.get(3, TimeUnit.SECONDS);
 
