@@ -60,7 +60,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -86,8 +85,8 @@ public class FileWatcher implements HttpFileCacheLoader,Runnable{
     private Thread worker;
     private volatile boolean stayAlive;    
 
-    private final Map<WatchKey, RootDir> allKeys = new HashMap<>();
-    private final ConcurrentHashMap<RootDir,Object> allrootdirs = 
+    private final Map<WatchKey, RootDir> allKeys = new ConcurrentHashMap(64,(float)0.75,1);
+    private final ConcurrentHashMap<RootDir,RootDir> allrootdirs = 
             new ConcurrentHashMap<>(64,(float)0.75,1);
     private FileChangedListener fcli;
     private final Deflater deflater=new Deflater(Deflater.DEFAULT_COMPRESSION);
@@ -131,15 +130,24 @@ public class FileWatcher implements HttpFileCacheLoader,Runnable{
      */
     public void loadFile(File file, String customMapNameIfFile, 
             String prefixMapingIfDir,boolean followSymlinks) throws IOException {               
+        RootDir r = new RootDir(file.toPath(),fcli,customMapNameIfFile,prefixMapingIfDir,followSymlinks);
         if (allrootdirs.putIfAbsent(  //FileSystems.getDefault().getPath(fileOrRootDir)
-                new RootDir(file.toPath(),
-                    fcli,customMapNameIfFile,prefixMapingIfDir,followSymlinks), this)
-                !=null){
+                r,r)!=null){
             throw new IOException("File is already cached: "+file);
         }        
         worker.interrupt();
     }
 
+    @Override
+    public void remove(File file, String optionalmapedname, String host) {
+        RootDir r=allrootdirs.remove(new RootDir(file.toPath(),null, optionalmapedname!=null?optionalmapedname:"/"+file.toPath().toString(),"",false));
+        if (r!=null){
+            for (WatchKey wk: r.watcherKeys.keySet()){
+                wk.cancel();                
+            }
+        }
+    }
+    
     @Override
     public void setFileChangedListener(FileChangedListener fcli) {
         this.fcli = fcli;
@@ -191,10 +199,10 @@ public class FileWatcher implements HttpFileCacheLoader,Runnable{
     }
 
     @Override
-    public void loadFile(MessageDigest MD5_,ByteChannel bs,byte[] data,MyByteArrayOutputStream bout, boolean compress) throws IOException {
+    public void loadFile(MessageDigest MD5_,ByteChannel bs,byte[] data,MyByteArrayOutputStream bout) throws IOException {
         deflater.reset();
-        MD5_.reset();
-        DeflaterOutputStream zout = compress?new DeflaterOutputStream(bout, deflater):null;
+        final boolean compress = bout !=null;
+        DeflaterOutputStream zout = compress?new DeflaterOutputStream(bout, deflater,true):null;
         ByteBuffer bb_ = ByteBuffer.wrap(data);
         int r;
         int pos = 0;        
@@ -213,11 +221,11 @@ public class FileWatcher implements HttpFileCacheLoader,Runnable{
     private class RootDir{
         final FileChangedListener fcli;
         final Path root;    
-        final Map<WatchKey, Path> watcherKeys = new HashMap<>(1);
+        final Map<WatchKey, Path> watcherKeys = new ConcurrentHashMap<>(1,0.75f,1);
         final String prefix;
         final String customMapName;
         final LinkOption linkfollow;
-        final int hashcode;
+        final int hashcode;        
 
         public RootDir(Path root, FileChangedListener fcli,String customMapName,String prefix,boolean followsymlinks) {
             this.root = root;
@@ -230,8 +238,8 @@ public class FileWatcher implements HttpFileCacheLoader,Runnable{
 
         @Override
         public boolean equals(Object obj) {
-            return ((RootDir)obj).root.equals(root) && 
-                    ((RootDir)obj).customMapName.equals(customMapName);
+            return ((RootDir)obj).root.equals(root);
+                  //&& ((RootDir)obj).customMapName.equals(customMapName);
         }
 
         @Override
