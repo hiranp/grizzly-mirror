@@ -77,7 +77,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
     private static final DateFormat dateformatcloner = 
             new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z",Locale.UK);
 
-    private static final byte[] deflateHeader = " deflate".getBytes();
+    private static final byte[] deflateHeader = " gzip".getBytes();
     static volatile StringArray currentHTTPtimestamp;
     static volatile StringArray expireHTTPtimestamp;                     
       
@@ -327,7 +327,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
             if (buf.indexOf(deflateHeader, 10)>0){//only supporting deflate requests 
                 notifyProbesEntryHit(fr);
                 Object b=currentHTTPtimestamp;//volatile read to ensure buffer timestamp bytes are updated.
-                ByteBuffer bb =fr.getResponse(buf);
+                ByteBuffer bb =fr.getResponse(buf);                
                 System.err.println(bb);
                 return new DirectBufferWraper(bb); //fr==null?HTTPstatus.NotFound.upr.data :  
             }

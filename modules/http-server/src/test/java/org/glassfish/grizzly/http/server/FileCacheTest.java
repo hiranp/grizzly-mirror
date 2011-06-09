@@ -39,6 +39,9 @@
  */
 package org.glassfish.grizzly.http.server;
 
+import org.glassfish.grizzly.http.util.DataChunk;
+import java.io.OutputStream;
+import java.net.Socket;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.Base64Utils;
 import org.glassfish.grizzly.http.server.filecache.HttpFileCacheEntry;
@@ -101,6 +104,8 @@ import static org.junit.Assert.*;
 public class FileCacheTest {
 
     public static final int PORT = 18891;
+    static final int respwait = 2;
+    static final String acceptEncoding = "gzip";
     private HttpServer httpServer;
     private final boolean isSslEnabled;
 
@@ -163,10 +168,18 @@ public class FileCacheTest {
                 }
             }
         });
-        /*for (int i=0;i<2;i++){            
+        
+        final File file = new File(fileName);
+        InputStream fis = new FileInputStream(file);
+        byte[] data = new byte[(int) file.length()];
+        fis.read(data);
+        fis.close();
+        final String pattern = new String(data);        
+                
+       /* for (int i=0;i<2;i++){
             Socket s = new Socket("localhost", PORT);
             OutputStream out = s.getOutputStream();
-            out.write("GET http://localhost/pom.xml HTTP/1.1\r\nHost: localhost\r\n\r\n\r\n".getBytes());
+            out.write("GET http://localhost/pom.xml HTTP/1.1\r\nHost: localhost\r\nAccept-Encoding: gzip\r\n\r\n".getBytes());
             out.flush();      
             Thread.sleep(250);
             System.err.println("************************");
@@ -182,38 +195,26 @@ public class FileCacheTest {
                 .uri("/somedata")
                 .protocol("HTTP/1.1")
                 .header("Host", "localhost")
-                .header("Accept-Encoding", "deflate")
+                .header("Accept-Encoding", acceptEncoding)
                 .build();
-
-        
-        
+                
         final HttpRequestPacket request2 = HttpRequestPacket.builder()
                 .method("GET")
                 .uri("/somedata")
                 .protocol("HTTP/1.1")
                 .header("Host", "localhost")
-                .header("Accept-Encoding", "deflate")
+                .header("Accept-Encoding", acceptEncoding)
                 .build();
 
         boolean isOk = false;
         try {
-            final Future<HttpContent> responseFuture1 = send("localhost", PORT, request1);
-            final HttpContent response1 = responseFuture1.get(3, TimeUnit.SECONDS);
-
+            final HttpContent response1 = send("localhost", PORT, request1).get(respwait, TimeUnit.SECONDS);
             assertEquals("Not cached data mismatch\n" + cacheProbe, "Hello not cached data", response1.getContent().toStringContent());
 
-            /*final File file = new File(fileName);
-            InputStream fis = new FileInputStream(file);
-            byte[] data = new byte[(int) file.length()];
-            fis.read(data);
-            fis.close();
-
-            final String pattern = new String(data);*/
-            Thread.sleep(500);
-            final Future<HttpContent> responseFuture2 = send("localhost", PORT, request2);
-            final HttpContent response2 = responseFuture2.get(3, TimeUnit.SECONDS);
+            Thread.sleep(200);
+            final HttpContent response2 = send("localhost", PORT, request2).get(respwait, TimeUnit.SECONDS);
             assertEquals("ContentType is wrong " + response2.getHttpHeader().getContentType(), "text/xml", response2.getHttpHeader().getContentType());
-            //assertEquals("Cached data mismatch\n" + cacheProbe, pattern, response2.getContent().toStringContent());
+            assertEquals("Cached data mismatch\n" + cacheProbe, pattern, response2.getContent().toStringContent());
             isOk = true;
         } finally {
             if (!isOk) {
@@ -274,7 +275,7 @@ public class FileCacheTest {
         boolean isOk = false;
         try {
             final Future<HttpContent> responseFuture1 = send("localhost", PORT, request1);
-            final HttpContent response1 = responseFuture1.get(3, TimeUnit.SECONDS);
+            final HttpContent response1 = responseFuture1.get(respwait, TimeUnit.SECONDS);
 
             //assertEquals(response1.getHttpHeader().getHeaders().toString(), "deflate", response1.getHttpHeader().getHeader("Content-Encoding"));
             assertEquals("Not cached data mismatch\n" + probe, "Hello not cached data", response1.getContent().toStringContent());
@@ -289,7 +290,7 @@ public class FileCacheTest {
             final String pattern = new String(data);
 
             final Future<HttpContent> responseFuture2 = send("localhost", PORT, request2);
-            final HttpContent response2 = responseFuture2.get(3, TimeUnit.SECONDS);
+            final HttpContent response2 = responseFuture2.get(respwait, TimeUnit.SECONDS);
             assertEquals(probe.toString(), "deflate", response2.getHttpHeader().getHeader("Content-Encoding"));
             assertEquals("Cached data mismatch\n" + probe, pattern, response2.getContent().toStringContent());
             isOk = true;
@@ -311,7 +312,7 @@ public class FileCacheTest {
                 .uri("/pom.xml")
                 .protocol("HTTP/1.1")
                 .header("Host", "localhost")
-                .header("Accept-Encoding", "deflate")
+                .header("Accept-Encoding", acceptEncoding)
                 .build();
 
         final File file = new File(fileName);
@@ -324,7 +325,7 @@ public class FileCacheTest {
         final String pattern = new String(data);
 
         final Future<HttpContent> responseFuture1 = send("localhost", PORT, request1);
-        final HttpContent response1 = responseFuture1.get(3, TimeUnit.SECONDS);
+        final HttpContent response1 = responseFuture1.get(respwait, TimeUnit.SECONDS);
         assertEquals("Cached data mismatch. Response=" + response1.getHttpHeader(),
                 pattern, response1.getContent().toStringContent());
 
@@ -333,12 +334,12 @@ public class FileCacheTest {
                 .uri("/pom.xml")
                 .protocol("HTTP/1.1")
                 .header("Host", "localhost")
-                .header("Accept-Encoding", "deflate")
+                .header("Accept-Encoding", acceptEncoding)
                 .header("If-None-Match", etagString)
                 .build();
-Thread.sleep(500);
+        Thread.sleep(200);
         final Future<HttpContent> responseFuture2 = send("localhost", PORT, request2);
-        final HttpContent response2 = responseFuture2.get(3, TimeUnit.SECONDS);
+        final HttpContent response2 = responseFuture2.get(respwait, TimeUnit.SECONDS);
 
         assertEquals("304 is expected", 304, ((HttpResponsePacket) response2.getHttpHeader()).getStatus());
         assertTrue("empty body is expected", !response2.getContent().hasRemaining());
@@ -355,7 +356,7 @@ Thread.sleep(500);
             listener.setSSLEngineConfig(createSSLConfig(true));
         }
         listener.getFileCache().setEnabled(true);
-        /*listener.getContentEncodings().add(new GZipContentEncoding(
+        listener.getContentEncodings().add(new GZipContentEncoding(
                 GZipContentEncoding.DEFAULT_IN_BUFFER_SIZE,
                 GZipContentEncoding.DEFAULT_OUT_BUFFER_SIZE,
                 new EncodingFilter() {
@@ -365,11 +366,11 @@ Thread.sleep(500);
                         if (!httpPacket.isRequest()) {
                             final HttpResponsePacket response = (HttpResponsePacket) httpPacket;
                             final HttpRequestPacket request;
-                            final DataChunk acceptEncoding;
-                            if (/*response.isChunked() && */
-        /*(request = response.getRequest()) != null
-                                    && (acceptEncoding = request.getHeaders().getValue("Accept-Encoding")) != null
-                                    && acceptEncoding.indexOf("gzip", 0) >= 0) {
+                            final DataChunk a;
+                            if (response.isChunked() && 
+        (request = response.getRequest()) != null
+                                    && (a = request.getHeaders().getValue("Accept-Encoding")) != null
+                                    && a.indexOf(acceptEncoding, 0) >= 0) {
                                 return true;
                             }
                         }
@@ -381,7 +382,7 @@ Thread.sleep(500);
                     public boolean applyDecoding(HttpHeader httpPacket) {
                         return false;
                     }
-                }));*/
+                }));
 
         httpServer.addListener(listener);
     }
@@ -428,7 +429,7 @@ Thread.sleep(500);
                 .build();
 
         Future<Connection> connectFuture = connectorHandler.connect(host, port);
-        final Connection connection = connectFuture.get(3, TimeUnit.SECONDS);
+        final Connection connection = connectFuture.get(respwait, TimeUnit.SECONDS);
 
         connection.write(request);
 

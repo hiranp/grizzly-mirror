@@ -47,17 +47,18 @@ import java.nio.channels.ByteChannel;
 import java.security.MessageDigest;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPOutputStream;
 import org.glassfish.grizzly.http.server.filecache.HttpFileCacheEntry.MyByteArrayOutputStream;
 
 /**
- * Sucky 1.6 fileloader.
+ * Simple j2se 1.6 fileloader.
  * @author gustav trede
  */
-public class SuckyFileLoader implements HttpFileCacheLoader {
+public class SimpleFileLoader implements HttpFileCacheLoader {
 
     private FileChangedListener fcli;
     
-    public SuckyFileLoader() {
+    public SimpleFileLoader() {
     }
 
     @Override
@@ -79,8 +80,10 @@ public class SuckyFileLoader implements HttpFileCacheLoader {
     @Override
     public void loadFile(MessageDigest MD5_, ByteChannel bs, byte[] data, MyByteArrayOutputStream bout) throws IOException {
         final boolean compress = bout !=null;
-        Deflater def = compress?new Deflater(Deflater.DEFAULT_COMPRESSION):null;
-        DeflaterOutputStream zout = compress?new DeflaterOutputStream(bout, def):null;
+        //Deflater def = compress?new Deflater(Deflater.DEFAULT_COMPRESSION):null;
+        
+        DeflaterOutputStream zout = compress?new GZIPOutputStream(bout):null; // DeflaterOutputStream(bout, def):null;
+//DeflaterOutputStream zout = compress?new DeflaterOutputStream(bout, def):null;
         ByteBuffer bb_ = ByteBuffer.wrap(data);
         int r;
         int pos = 0;
@@ -93,8 +96,9 @@ public class SuckyFileLoader implements HttpFileCacheLoader {
         }
         if (compress){
             zout.finish();
+            zout.flush();            
             zout.close();
-            def.end();
+            //def.end();
         }        
     }
     

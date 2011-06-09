@@ -88,11 +88,11 @@ public final class HttpFileCacheEntry {
                 "Expires: ", HttpFileCache.expireHTTPtimestamp.s, 
                 "Cache-Control: max-age=" + maxage,"        ", 
                 "max-age: " + maxage, "        ", 
-                "Content-Length: ", Integer.toString(data.length), 
+                "Content-Length: ", Integer.toString(dataLength), 
                 "Etag: ", etagString, 
                 "Last-Modified: ",modTime, 
                 "Content-Type: ", contentType, 
-                compress ? "Content-Encoding: deflate\r\nAge: " : "Age: ", "0", 
+                compress ? "Content-Encoding: gzip\r\nAge: " : "Age: ", "0", 
                 usemd5 ? "Content-MD5: " : "",
                 usemd5 ? etagString : "");
         responseNotModified = new UpdateAbleResponse("304 Not Modified", "Etag: ", etagString);
@@ -100,7 +100,9 @@ public final class HttpFileCacheEntry {
 
     int getRamUsage(){
         return 64+ response.getRamUsage()+responseNotModified.getRamUsage()+
-                etagHeaderValue.length+48;//concurrenthashmap estimation        
+                etagHeaderValue.length+
+                48+//concurrenthashmap estimation        
+                +100;//filewatcher overhead estimation. TODO: measure.
     }
     
     void updateHeaders(byte[] expminbytes, byte[] curtime, byte[] expires) {

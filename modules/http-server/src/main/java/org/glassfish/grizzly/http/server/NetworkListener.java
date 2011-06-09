@@ -56,7 +56,7 @@ import org.glassfish.grizzly.http.ContentEncoding;
 import org.glassfish.grizzly.http.HttpCodecFilter;
 import org.glassfish.grizzly.http.KeepAlive;
 import org.glassfish.grizzly.http.server.filecache.HttpFileCache;
-import org.glassfish.grizzly.http.server.filecache.SuckyFileLoader;
+import org.glassfish.grizzly.http.server.filecache.SimpleFileLoader;
 import org.glassfish.grizzly.monitoring.jmx.JmxObject;
 import org.glassfish.grizzly.nio.transport.TCPNIOServerConnection;
 import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
@@ -137,7 +137,7 @@ public class NetworkListener {
     /**
      * {@link FileCache} to be used by this <code>NetworkListener</code>.
      */
-    private final HttpFileCache fileCache = new HttpFileCache(new SuckyFileLoader());
+    private final HttpFileCache fileCache = new HttpFileCache(new SimpleFileLoader());
     /**
      * The set of the supported {@link ContentEncoding}s.
      */
