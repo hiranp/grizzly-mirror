@@ -110,7 +110,7 @@ class UpdateAbleResponse {
         return data.capacity()+ 7*2+4+8+4+16+96;       
     }
 
-    private short endIndexOf(String s, String tofind) {
+    private static short endIndexOf(String s, String tofind) {
         int i = s.indexOf(tofind);
         return (short) (i < 0 ? -1 : i + tofind.length());
     }

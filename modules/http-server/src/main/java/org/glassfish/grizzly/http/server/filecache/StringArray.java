@@ -54,22 +54,15 @@ final class StringArray {
      * @param s
      */
     public StringArray(String s) {
-        //TODO:p3 add @NotNull
         this.s = s; //=s.toLowerCase();
         this.ba = s.getBytes();
         this.hashcode = Arrays.hashCode(ba);
     }
 
-    /*public StringArray(String dontToLowerCase,Object dumy) {
-    this.s = dontToLowerCase;
-    this.ba = dontToLowerCase.getBytes();
-    this.hashcode = Arrays.hashCode(ba);
-    }*/
     /**
      * @param ba
      */
     public StringArray(byte[] ba) {
-        //TODO:p3 add @NotNull to ba, s can be null.
         this.ba = ba;
         this.hashcode = Arrays.hashCode(ba);
     }
@@ -78,10 +71,6 @@ final class StringArray {
         return Arrays.equals(this.ba, ba);
     }
 
-    /*public void equalsArrayEx(byte[] ba) throws InvalidResourceException{
-    if (!Arrays.equals(this.ba, ba))
-    throw new InvalidResourceException(new StringArray(ba), this);
-    }*/
     @Override
     public final boolean equals(Object obj) {
         return Arrays.equals(ba, ((StringArray) obj).ba);

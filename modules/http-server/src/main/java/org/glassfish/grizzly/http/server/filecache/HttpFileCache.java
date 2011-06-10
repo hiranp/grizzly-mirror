@@ -50,7 +50,6 @@ import org.glassfish.grizzly.monitoring.jmx.JmxMonitoringAware;
 import org.glassfish.grizzly.monitoring.jmx.JmxMonitoringConfig;
 import org.glassfish.grizzly.monitoring.jmx.JmxObject;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.security.MessageDigest;
 import java.text.DateFormat;
@@ -94,11 +93,11 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
     
     private volatile ScheduledExecutorService sexs;                  
     
-    volatile String xpoweredbyheader = "";//TODO: implement xpoweredby header
+    volatile String xpoweredbyheader = "";
     volatile boolean useContentMD5header = false;
-    volatile int HTTP_HEADER_EXPIRES_MINUTES = 15;
-    volatile long MAX_TOTAL_RAMUSAGE_BYTES = 1L<<32;
-    volatile long MAX_PER_FILE_INRAMSIZE_BYTES=1L<<28;
+    volatile int HTTP_HEADER_EXPIRES_MINUTES   = 15;
+    volatile long MAX_TOTAL_RAMUSAGE_BYTES     = 1L<<32;
+    volatile long MAX_PER_FILE_INRAMSIZE_BYTES = 1L<<28;
     private volatile long usedRamSizeBytes;            
 
     public HttpFileCache(HttpFileCacheLoader fileCacheLoader) {
@@ -113,7 +112,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
     }
 
     public void setXpoweredbyheader(String xpoweredbyheader) {
-        this.xpoweredbyheader = xpoweredbyheader;
+        this.xpoweredbyheader = xpoweredbyheader==null?"":xpoweredbyheader;
     }
 
     public String getXpoweredbyheader() {
@@ -132,9 +131,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
      * Propagates to the entire cache by roughly 1 second delay.
      */
     public void setHTTP_HEADER_EXPIRES_MINUTES(int HTTP_HEADER_EXPIRES_MINUTES) {
-        if (HTTP_HEADER_EXPIRES_MINUTES<0)
-            HTTP_HEADER_EXPIRES_MINUTES=0;
-        this.HTTP_HEADER_EXPIRES_MINUTES = HTTP_HEADER_EXPIRES_MINUTES;        
+        this.HTTP_HEADER_EXPIRES_MINUTES = Math.max(HTTP_HEADER_EXPIRES_MINUTES,0);        
     }
 
     public int getHTTP_HEADER_EXPIRES_MINUTES() {        
@@ -162,7 +159,6 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
     }       
     
     private ScheduledExecutorService startTimeStampUpdater(){
-        //final HTTPstatus[] AllHTTPstatus = HTTPstatus.values();
         final DateFormat df = (DateFormat) dateformatcloner.clone();
         Runnable tupdater = new Runnable() {@Override
             public void run() {
@@ -173,8 +169,6 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
                 byte[] cba= currentTime.ba;
                 byte[] eba = expireTime.ba;
                 byte[] expminbytes = String.valueOf(expminutes*60).getBytes();
-                //for (HTTPstatus hs:AllHTTPstatus)
-                  //  put(cba, hs.upr.dateOffset, hs.upr.dataAdr);
                 for (HttpFileCacheEntry fr:filecache.values()){
                     fr.updateHeaders(expminbytes, cba, eba);
                 }
@@ -185,7 +179,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
         ScheduledExecutorService se = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
             @Override
             public Thread newThread(final Runnable r) {
-                Thread t = new Thread(r,"FIXEDRATETIMESTAMPUPDATER");
+                Thread t = new Thread(r,"FileCacheHttpHeaderUpdater");
                 t.setPriority(Thread.MAX_PRIORITY);
                 t.setDaemon(true);
                 return t;
@@ -289,7 +283,8 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
     /**
      * Only works on mapped single files or root directories.
      * @param file
-     * @return 
+     * @param optionalmapedname
+     * @param host 
      */
     public void remove(File file,String optionalmapedname, String host){
         fileLoader.remove(file,optionalmapedname,host);
@@ -302,9 +297,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
             if (buf.indexOf(deflateHeader, 10)>0){//only supporting deflate requests 
                 notifyProbesEntryHit(fr);
                 Object b=currentHTTPtimestamp;//volatile read to ensure buffer timestamp bytes are updated.
-                ByteBuffer bb =fr.getResponse(buf);                
-                System.err.println(bb);
-                return new DirectBufferWraper(bb); //fr==null?HTTPstatus.NotFound.upr.data :  
+                return new DirectBufferWraper(fr.getResponse(buf)); //fr==null?HTTPstatus.NotFound.upr.data :  
             }
         }
         notifyProbesEntryMissed(req);
@@ -368,23 +361,5 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
                 probe.onErrorEvent(this, error);
             }
         }
-    }
-    
-    /*public enum HTTPstatus {
-        BadRequest("400 Bad Request"),
-        NotFound("404 Not Found"),        
-        RequestTimeout("408 Request Timeout"), //TODO:p1 implement request timeout
-        RequestEntityTooLarge("413 Request Entity Too Large"),
-        RequestURItooLong("414 Request-URI Too Long") //TODO:p1 implement request uri toolong
-        ;                        
-        HTTPstatus(String value){
-            upr = new UpdateAbleResponse(value,"Connection: ","close");//TODO:p1 close connection after first write
-        }                
-        private final UpdateAbleResponse upr;              
-        //public final Handshaker.HandShakeException ex = new Handshaker.HandShakeException(this);        
-        public final ByteBuffer getData(){
-            Object a=currentHTTPtimestamp;//volatile read to ensure buffer timestamp bytes etc are updated.        
-            return upr.data;
-        }                
-    }*/        
+    }            
 }

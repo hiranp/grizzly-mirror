@@ -42,7 +42,7 @@ package org.glassfish.grizzly.http.server.filecache;
 import java.nio.channels.ByteChannel;
 
 /**
- *
+ * Allows for both j2se 1.6 and 1.7 implementations.
  * @author gustav trede
  */
 interface FileChangedListener {

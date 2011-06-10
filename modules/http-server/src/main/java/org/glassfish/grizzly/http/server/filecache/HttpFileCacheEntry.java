@@ -83,7 +83,8 @@ public final class HttpFileCacheEntry {
             throw new IOException("Not caching too big file:"+name+" compressed size:" + fileDataRamSize);
         }
         String maxage = Integer.toString(hc.HTTP_HEADER_EXPIRES_MINUTES*60);
-        boolean usemd5 = hc.useContentMD5header;
+        String xpow = hc.xpoweredbyheader;
+        final boolean usemd5 = hc.useContentMD5header;
         response = new UpdateAbleResponse("200 OK", data,dataLength, 
                 "Expires: ", HttpFileCache.expireHTTPtimestamp.s, 
                 "Cache-Control: max-age=" + maxage,"        ", 
@@ -94,7 +95,8 @@ public final class HttpFileCacheEntry {
                 "Content-Type: ", contentType, 
                 compress ? "Content-Encoding: gzip\r\nAge: " : "Age: ", "0", 
                 usemd5 ? "Content-MD5: " : "",
-                usemd5 ? etagString : "");
+                usemd5 ? etagString : "",
+                xpow.length()==0?"":"X-Powered-By: ", xpow);
         responseNotModified = new UpdateAbleResponse("304 Not Modified", "Etag: ", etagString);
     }
 
@@ -111,7 +113,7 @@ public final class HttpFileCacheEntry {
     }
     
     ByteBuffer getResponse(final Buffer buf) {
-        return (buf.indexOf(etagHeaderValue, 10) >= 0) ? responseNotModified.data : response.data;
+        return buf.indexOf(etagHeaderValue, 10) >= 0 ? responseNotModified.data : response.data;
     }
 
     @Override
@@ -131,7 +133,6 @@ public final class HttpFileCacheEntry {
         @Override
         public void write(int b) {
             throw new IllegalStateException("Not supported.");
-            //buf[count++] = (byte) b;
         }
 
         @Override
