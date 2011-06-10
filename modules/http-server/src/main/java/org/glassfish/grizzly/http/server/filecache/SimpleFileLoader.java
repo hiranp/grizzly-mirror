@@ -96,7 +96,6 @@ public class SimpleFileLoader implements HttpFileCacheLoader {
         }
         if (compress){
             zout.finish();
-            zout.flush();            
             zout.close();
             //def.end();
         }        

@@ -96,7 +96,7 @@ class UpdateAbleResponse {
         this.maxAgeOffset = endIndexOf(ss, "max-age: ");
         this.etagOffset = endIndexOf(ss, "Etag: ");
         byte[] ssb = ss.getBytes();
-        ByteBuffer bt = ByteBuffer.allocateDirect(ssb.length + (payload != null ? payloadLength : 0));
+        ByteBuffer bt = ByteBuffer.allocateDirect(ssb.length + payloadLength);
         bt.put(ssb);
         if (payload != null) {
             bt.put(payload,0,payloadLength);

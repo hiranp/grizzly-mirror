@@ -136,8 +136,9 @@ public final class HttpFileCacheEntry {
 
         @Override
         public void write(byte b[], int off, int len) {
-            if (count+len>buf.length){
-                buf = Arrays.copyOf(buf, count);
+            final int dif = buf.length - count - len;
+            if (dif<0){
+                buf = Arrays.copyOf(buf, (int)(buf.length*1.20)-dif);
             }
             System.arraycopy(b, off, buf, count, len);
             count += len;

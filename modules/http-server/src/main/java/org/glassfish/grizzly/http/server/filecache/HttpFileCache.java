@@ -56,64 +56,35 @@ import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import org.glassfish.grizzly.http.server.util.MimeType;
 
 /**s
  * HTTP1.1 file cache.<br>
  * @author Gustav Trede
  */
-public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {               
-    
-    private static final Map<String,String> fileToContentType = 
-            new HashMap<String, String>();    
+public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {                   
     
     private static final DateFormat dateformatcloner = 
             new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z",Locale.UK);
 
     private static final byte[] deflateHeader = " gzip".getBytes();
-    static volatile StringArray currentHTTPtimestamp;
-    static volatile StringArray expireHTTPtimestamp;                     
-      
-    static{              
-        currentHTTPtimestamp = new StringArray(dateformatcloner.format(new Date()));        
-        //TODO add more file types and validate that all are valid by the spec.
-        addtype("image", "png","gif","jpg","jpeg","bmp");
-        addtype("text", "html","css","xml");
-        fileToContentType.put("htm","text/html");
-        fileToContentType.put("js","application/x-javascript");
-        fileToContentType.put("jar","application/octet-stream");
-        fileToContentType.put("exe","application/octet-stream");
-        fileToContentType.put("bin","application/octet-stream");        
-    }
-          
     
-    private static String getFileContentType(String fname) throws IOException{
-        int index = fname.lastIndexOf('.');
-        if (index++<=0 && fname.length()==index){
-            return null;
-        }
-        return fileToContentType.get(fname.substring(index).toLowerCase());
-    }
-
-    private static void addtype(String a,String...b){
-        for (String s:b)
-            fileToContentType.put(s.toLowerCase(),(a+'/'+s).toLowerCase());
-    }       
+    static volatile StringArray currentHTTPtimestamp;
+    static volatile StringArray expireHTTPtimestamp;            
         
-    private final AbstractJmxMonitoringConfig<FileCacheProbe> monitoringConfig =
+    private AbstractJmxMonitoringConfig<FileCacheProbe> monitoringConfig =
          new AbstractJmxMonitoringConfig<FileCacheProbe>(FileCacheProbe.class) {
         @Override
         public JmxObject createManagementObject() {
             return new FileCache(HttpFileCache.this);
         }
-    };
+    };                                                     
     
     private final ConcurrentHashMap<HttpRequestPacket, HttpFileCacheEntry> 
         filecache = new ConcurrentHashMap<HttpRequestPacket, HttpFileCacheEntry>
@@ -128,8 +99,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
     volatile int HTTP_HEADER_EXPIRES_MINUTES = 15;
     volatile long MAX_TOTAL_RAMUSAGE_BYTES = 1L<<32;
     volatile long MAX_PER_FILE_INRAMSIZE_BYTES=1L<<28;
-    private volatile long usedRamSizeBytes;
-            
+    private volatile long usedRamSizeBytes;            
 
     public HttpFileCache(HttpFileCacheLoader fileCacheLoader) {
         fileLoader = fileCacheLoader;
@@ -139,7 +109,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }        
-        setEnabled(true);
+        setEnabled(true);//TODO: life cycle. dont enable in constructor.
     }
 
     public void setXpoweredbyheader(String xpoweredbyheader) {
@@ -228,6 +198,11 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
     
     private FileChangedListener createListener(){
         return new FileChangedListener() {
+            private String getFileContentType(final String fname) {
+                int index = fname.lastIndexOf('.');
+                return (index++<=0 && fname.length()==index)? null :
+                    MimeType.get(fname.substring(index).toLowerCase());    
+            }            
             final DateFormat df = (DateFormat) dateformatcloner.clone();
             @Override
             public void fileChanged(String filename,String mapname,ByteChannel rb,long size,long modifiedMilliSec, boolean deleted) {                                        
@@ -274,7 +249,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
                     if (usedRamSizeBytes>MAX_TOTAL_RAMUSAGE_BYTES){
                         usedRamSizeBytes-=fr.getRamUsage();
                         filecache.remove(r);
-                        throw new IOException("Httpfilecache limit reached: not caching: "+ruri);
+                        throw new IOException("RAM limit reached: not caching: "+ruri);
                     }
                     final FileCacheProbe[] probes = monitoringConfig.getProbesUnsafe();
                     if (probes != null) {

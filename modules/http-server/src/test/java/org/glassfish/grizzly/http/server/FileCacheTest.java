@@ -151,7 +151,6 @@ public class FileCacheTest {
                 try {
                     String error = null;
                     try {
-                        res.setHeader("Content-Type", "text/xml");
                         addToFileCache(req, new File(fileName));
                     } catch (Exception exception) {
                         error = exception.getMessage();
@@ -213,7 +212,7 @@ public class FileCacheTest {
 
             Thread.sleep(200);
             final HttpContent response2 = send("localhost", PORT, request2).get(respwait, TimeUnit.SECONDS);
-            assertEquals("ContentType is wrong " + response2.getHttpHeader().getContentType(), "text/xml", response2.getHttpHeader().getContentType());
+            assertEquals("ContentType is wrong " + response2.getHttpHeader().getContentType(), "application/xml", response2.getHttpHeader().getContentType());
             assertEquals("Cached data mismatch\n" + cacheProbe, pattern, response2.getContent().toStringContent());
             isOk = true;
         } finally {
