@@ -333,8 +333,8 @@ public class StaticHttpHandler extends HttpHandler {
             String prefixMapingIfDir,boolean followSymlinks) {
         final FileCacheFilter fileCacheFilter = lookupFileCache(req.getContext());
         if (fileCacheFilter != null) {
-            fileCacheFilter.getFileCache().
-                    add(resource, req.getRequest().getRequestURI(),
+            fileCacheFilter.getFileCache().add(req.getRequest().getHeader("Host"),
+                    resource, req.getRequest().getRequestURI(),
                     prefixMapingIfDir, followSymlinks);
             return true;
         }

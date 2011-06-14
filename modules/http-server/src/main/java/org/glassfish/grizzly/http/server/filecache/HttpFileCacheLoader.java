@@ -53,7 +53,7 @@ public interface HttpFileCacheLoader {
        
     void setFileChangedListener(FileChangedListener fcli);
     
-    void loadFile(File fileOrRootDir, String customMapNameIfFile, 
+    void loadFile(String host,File fileOrRootDir, String customMapNameIfFile, 
             String prefixMapingIfDir,boolean followSymlinks) 
             throws IOException;
     

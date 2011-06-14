@@ -83,7 +83,7 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
         public JmxObject createManagementObject() {
             return new FileCache(HttpFileCache.this);
         }
-    };                                                     
+    };
     
     private final ConcurrentHashMap<HttpRequestPacket, HttpFileCacheEntry> 
         filecache = new ConcurrentHashMap<HttpRequestPacket, HttpFileCacheEntry>
@@ -199,9 +199,8 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
             }            
             final DateFormat df = (DateFormat) dateformatcloner.clone();
             @Override
-            public void fileChanged(String filename,String mapname,ByteChannel rb,long size,long modifiedMilliSec, boolean deleted) {                                        
+            public void fileChanged(final String host,String filename,String mapname,ByteChannel rb,long size,long modifiedMilliSec, boolean deleted) {                                        
                 final String ruri = mapname.replace('\\', '/');
-                final String host = null;//"localhost"; //TODO:p1 fix host config
                 final int hcode = ruri.hashCode();
                 HttpRequestPacket r = new HttpRequestPacket() { @Override
                     public ProcessingState getProcessingState() {
@@ -209,10 +208,11 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
                     }
                     @Override
                     public boolean equals(Object obj) {
-                        return ((HttpRequestPacket)obj).getRequestURIRef().
-                                getRequestURIBC().equalsIgnoreCase(ruri)
-                        && (host==null ||  //TODO:p3 perf: use buffer instead of String creation:
-                            host.equals(((HttpRequestPacket)obj).getHeader("Host")));
+                        System.err.println("host:"+host+" "+((HttpRequestPacket)obj).getHeader("Host"));
+                        return ((host==null ||  //TODO:p3 perf: use buffer instead of String creation:
+                            host.equals(((HttpRequestPacket)obj).getHeader("Host")))
+                                &&((HttpRequestPacket)obj).getRequestURIRef().
+                                getRequestURIBC().equalsIgnoreCase(ruri));
                     }
                     @Override
                     public int hashCode() {
@@ -230,7 +230,6 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
                     }
                     return;
                 }
-                System.err.println("CACHED:'"+ruri+"'");
                 try { 
                     final String contentType = getFileContentType(filename);
                     if (contentType == null)
@@ -266,14 +265,14 @@ public class HttpFileCache implements JmxMonitoringAware<FileCacheProbe> {
      * Sync cache add  in 1.6. can only be files not directory in 1.6.
      * TODO: add host mapping param.
      */
-    public void add(File file, String customMapNameIfFile, 
+    public void add(String host,File file, String customMapNameIfFile, 
             String prefixMapingIfDir,boolean followSymlinks)  {        
         try {
             if (sexs==null)
                 throw new IOException("HttpFileCache is not Enabled.");                        
             if (prefixMapingIfDir==null)
                 prefixMapingIfDir="";
-            fileLoader.loadFile(file,customMapNameIfFile,prefixMapingIfDir,followSymlinks);
+            fileLoader.loadFile(host,file,customMapNameIfFile,prefixMapingIfDir,followSymlinks);
         } catch (IOException ex) {
             notifyProbesError(ex);            
             throw new RuntimeException(ex);

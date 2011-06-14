@@ -40,8 +40,6 @@
 package org.glassfish.grizzly.http.server;
 
 import org.glassfish.grizzly.http.util.DataChunk;
-import java.io.OutputStream;
-import java.net.Socket;
 import org.glassfish.grizzly.http.HttpResponsePacket;
 import org.glassfish.grizzly.http.util.Base64Utils;
 import org.glassfish.grizzly.http.server.filecache.HttpFileCacheEntry;

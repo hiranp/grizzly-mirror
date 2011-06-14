@@ -46,5 +46,5 @@ import java.nio.channels.ByteChannel;
  * @author gustav trede
  */
 interface FileChangedListener {
-    void fileChanged(String filename,String mapname,ByteChannel rb,long size,long modifiedMilliSec, boolean deleted);
+    void fileChanged(final String host,String filename,String mapname,ByteChannel rb,long size,long modifiedMilliSec, boolean deleted);
 }

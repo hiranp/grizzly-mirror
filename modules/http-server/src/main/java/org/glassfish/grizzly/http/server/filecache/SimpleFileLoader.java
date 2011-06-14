@@ -67,11 +67,11 @@ public class SimpleFileLoader implements HttpFileCacheLoader {
     }        
     
     @Override
-    public void loadFile(File file, String custname, String prefixMapingIfDir, boolean followSymlinks) throws IOException {        
+    public void loadFile(String host,File file, String custname, String prefixMapingIfDir, boolean followSymlinks) throws IOException {        
         String name = file.toString();
         RandomAccessFile ra = new RandomAccessFile(file, "r");
         try{
-            fcli.fileChanged(name, custname!=null?custname:name, ra.getChannel(), file.length(), file.lastModified(), followSymlinks);
+            fcli.fileChanged(host,name, custname!=null?custname:name, ra.getChannel(), file.length(), file.lastModified(), followSymlinks);
         }finally{
             ra.close();
         }
@@ -107,6 +107,6 @@ public class SimpleFileLoader implements HttpFileCacheLoader {
 
     @Override
     public void remove(File f,String optionalmapedname, String host) {
-        fcli.fileChanged(optionalmapedname==null?"/"+f.getName():optionalmapedname, host,null,0,0,true);
+        fcli.fileChanged(host,optionalmapedname==null?"/"+f.getName():optionalmapedname, host,null,0,0,true);
     }
 }

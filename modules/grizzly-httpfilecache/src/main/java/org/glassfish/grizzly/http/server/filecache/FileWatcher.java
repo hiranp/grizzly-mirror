@@ -128,9 +128,9 @@ public class FileWatcher implements HttpFileCacheLoader,Runnable{
      * @param followSymlinks
      * @throws IOException 
      */
-    public void loadFile(File file, String customMapNameIfFile, 
+    public void loadFile(String host,File file, String customMapNameIfFile, 
             String prefixMapingIfDir,boolean followSymlinks) throws IOException {               
-        RootDir r = new RootDir(file.toPath(),fcli,customMapNameIfFile,prefixMapingIfDir,followSymlinks);
+        RootDir r = new RootDir(host,file.toPath(),fcli,customMapNameIfFile,prefixMapingIfDir,followSymlinks);
         if (allrootdirs.putIfAbsent(  //FileSystems.getDefault().getPath(fileOrRootDir)
                 r,r)!=null){
             throw new IOException("File is already cached: "+file);
@@ -140,7 +140,7 @@ public class FileWatcher implements HttpFileCacheLoader,Runnable{
 
     @Override
     public void remove(File file, String optionalmapedname, String host) {
-        RootDir r=allrootdirs.remove(new RootDir(file.toPath(),null, optionalmapedname!=null?optionalmapedname:"/"+file.toPath().toString(),"",false));
+        RootDir r=allrootdirs.remove(new RootDir(host,file.toPath(),null, optionalmapedname!=null?optionalmapedname:"/"+file.toPath().toString(),"",false));
         if (r!=null){
             for (WatchKey wk: r.watcherKeys.keySet()){
                 wk.cancel();                
@@ -225,9 +225,11 @@ public class FileWatcher implements HttpFileCacheLoader,Runnable{
         final String prefix;
         final String customMapName;
         final LinkOption linkfollow;
+        final String host;
         final int hashcode;        
 
-        public RootDir(Path root, FileChangedListener fcli,String customMapName,String prefix,boolean followsymlinks) {
+        public RootDir(String host,Path root, FileChangedListener fcli,String customMapName,String prefix,boolean followsymlinks) {
+            this.host = host;
             this.root = root;
             this.fcli = fcli;
             this.prefix = prefix;
@@ -256,7 +258,7 @@ public class FileWatcher implements HttpFileCacheLoader,Runnable{
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes atr) throws IOException {
                     try(SeekableByteChannel sb = Files.newByteChannel(file, StandardOpenOption.READ)){
-                    fcli.fileChanged(file.toString(),prefix+root.relativize(file).toString(),sb,sb.size(),atr.lastModifiedTime().toMillis(), false);
+                    fcli.fileChanged(host,file.toString(),prefix+root.relativize(file).toString(),sb,sb.size(),atr.lastModifiedTime().toMillis(), false);
                     }
                     return FileVisitResult.CONTINUE;
                 }
@@ -316,7 +318,7 @@ public class FileWatcher implements HttpFileCacheLoader,Runnable{
                     try{
                     if (type!=ENTRY_DELETE)
                          sb = Files.newByteChannel(child, StandardOpenOption.READ);
-                    fcli.fileChanged(child.toString(),prefix+(customMapName!=null?customMapName:relroot.toString()),sb,sb!=null?sb.size():0,atr.lastModifiedTime().toMillis(),type==ENTRY_DELETE);
+                    fcli.fileChanged(host,child.toString(),prefix+(customMapName!=null?customMapName:relroot.toString()),sb,sb!=null?sb.size():0,atr.lastModifiedTime().toMillis(),type==ENTRY_DELETE);
                     }finally{
                         if (sb != null)
                             sb.close();
