@@ -804,7 +804,7 @@ public class HeapBuffer implements Buffer {
         sb.append(lim);
         sb.append(" cap=");
         sb.append(cap);
-        sb.append(']').append(new String(heap,offset,offset+lim));
+        sb.append(']');
         return sb.toString();
     }
 
