@@ -73,7 +73,7 @@
                         <argument>-classpath</argument>
                         <!-- automatically creates the classpath using all project dependencies,
                         also adding the project build directory -->
-                        <classpath />
+                        <classpath/>
                         <argument>${mainClass}</argument>
                     </arguments>
                 </configuration>
@@ -114,7 +114,7 @@
             <groupId>org.glassfish.grizzly</groupId>
             <artifactId>grizzly-npn-bootstrap</artifactId>
             <scope>compile</scope>
-            <version>1.0</version>
+            <version>1.9</version>
         </dependency>
     </dependencies>
 </project>
